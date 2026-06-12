@@ -179,4 +179,4 @@ AwesomeTime.prototype = {
 
 ## License
 
-MIT (or your preferred license)
+MIT

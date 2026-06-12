@@ -3,6 +3,8 @@
 A Cinnamon Desklet that displays a highly customizable time and date widget with support for fuzzy time expressions, prefixes, styling options, and flexible formatting.
 
 ---
+<img width="1275" height="177" alt="AwesomeTime" src="https://github.com/user-attachments/assets/0b589921-cc15-40e5-b69a-58ec1a5c44b1" />
+
 
 ## Features
 

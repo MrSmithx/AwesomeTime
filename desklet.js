@@ -30,13 +30,8 @@ AwesomeTime.prototype = {
             text: ""
         });
 
-        this.weatherLabel = new St.Label({
-            text: ""
-        });
-
         this.box.add_child(this.timeLabel);
         this.box.add_child(this.dateLabel);
-        this.box.add_child(this.weatherLabel);
 
         this.setContent(this.box);
 

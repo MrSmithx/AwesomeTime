@@ -1,0 +1,263 @@
+{
+    "layout": {
+        "type": "layout",
+        "pages": [
+          "timePage",
+          "datePage",
+          "otherPage"
+        ],
+
+        "timePage": {
+          "type": "page",
+          "title": "Time Settings",
+          "sections": [
+            "timeSection",
+            "fuzzySection"
+          ]
+        },
+
+        "datePage": {
+          "type": "page",
+          "title": "Date Settings",
+          "sections": [
+            "dateSection"
+          ]
+        },
+
+        "otherPage": {
+          "type": "page",
+          "title": "Other Settings",
+          "sections": [
+            "shadowSection",
+            "otherSection"
+          ]
+        },
+
+        "timeSection": {
+          "type": "section",
+          "title": "Time Settings",
+          "keys": [
+            "show-time",
+            "font-family",
+            "font-color",
+            "time-prefix",
+            "text-case"
+          ]
+        },
+
+        "fuzzySection": {
+          "type": "section",
+          "title": "Fuzzy Settings",
+          "keys": [
+            "fuzzy-time",
+            "fuzzy-level"
+          ]
+        },
+
+        "dateSection": {
+          "type": "section",
+          "title": "Date Settings",
+          "keys": [
+            "show-date",
+            "date-font-family",
+            "date-format",
+            "date-color",
+            "date-prefix",
+            "date-case",
+            "use-noon-midnight",
+            "date-align",
+            "date-position"
+          ]
+        },
+
+        "otherSection": {
+          "type": "section",
+          "title": "Other Settings",
+          "keys": [
+            "line-spacing",
+            "font-opacity"
+          ]
+        },
+
+        "shadowSection": {
+          "type": "section",
+          "title": "Shadow Settings",
+          "keys": [
+            "text-shadow-enabled",
+            "text-shadow-color",
+            "text-shadow-offset",
+            "text-shadow-blur"
+          ]
+        }
+    },
+
+    "show-time": {
+        "type": "switch",
+        "default": true,
+        "description": "Show Time"
+    },
+
+    "font-family": {
+        "type": "fontchooser",
+        "default": "Sans 14",
+        "description": "Time Font"
+    },
+
+    "font-color": {
+        "type": "colorchooser",
+        "default": "#FFFFFF",
+        "description": "Time Color"
+    },
+
+    "time-prefix": {
+        "type": "entry",
+        "default": "",
+        "description": "Time Prefix"
+    },
+
+    "text-case": {
+        "type": "combobox",
+        "default": "normal",
+        "description": "Time Text Case",
+        "options": {
+            "Normal": "normal",
+            "UPPERCASE": "upper",
+            "lowercase": "lower",
+            "Capitalise Words": "title"
+        }
+    },
+
+    "show-date": {
+        "type": "switch",
+        "default": true,
+        "description": "Show Date"
+    },
+
+    "date-font-family": {
+        "type": "fontchooser",
+        "default": "Sans 14",
+        "description": "Date Font"
+    },
+
+    "date-format": {
+        "type": "entry",
+        "default": "%A %d %B %Y",
+        "description": "Date Format"
+    },
+
+    "date-color": {
+        "type": "colorchooser",
+        "default": "#cccccc",
+        "description": "Date Color"
+    },
+
+    "date-prefix": {
+        "type": "entry",
+        "default": "",
+        "description": "Date Prefix"
+    },
+
+    "date-case": {
+        "type": "combobox",
+        "default": "normal",
+        "description": "Date Text Case",
+        "options": {
+            "Normal": "normal",
+            "UPPERCASE": "upper",
+            "lowercase": "lower",
+            "Capitalise Words": "title"
+        }
+    },
+
+    "use-noon-midnight": {
+        "type": "switch",
+        "default": true,
+        "description": "Use Noon / Midnight"
+    },
+
+    "date-align": {
+        "type": "combobox",
+        "default": "left",
+        "description": "Date Alignment",
+        "options": {
+            "Left": "left",
+            "Centre": "center",
+            "Right": "right"
+        }
+    },
+
+    "date-position": {
+        "type": "combobox",
+        "default": "below",
+        "description": "Date Position",
+        "options": {
+            "Above Time": "above",
+            "Below Time": "below"
+        }
+    },
+
+    "fuzzy-time": {
+        "type": "switch",
+        "default": false,
+        "description": "Fuzzy Time Mode"
+    },
+
+    "fuzzy-level": {
+        "type": "combobox",
+        "default": "medium",
+        "description": "Fuzziness Level",
+        "options": {
+            "Subtle": "low",
+            "Normal": "medium",
+            "Very Fuzzy": "high"
+        }
+    },
+
+    "text-shadow-enabled": {
+        "type": "switch",
+        "default": false,
+        "description": "Enable Text Shadow"
+    },
+
+    "text-shadow-color": {
+        "type": "colorchooser",
+        "default": "#000000",
+        "description": "Shadow Color"
+    },
+
+    "text-shadow-offset": {
+        "type": "scale",
+        "default": 3,
+        "min": 0,
+        "max": 20,
+        "step": 1,
+        "description": "Shadow Depth"
+    },
+
+    "text-shadow-blur": {
+        "type": "scale",
+        "default": 3,
+        "min": 0,
+        "max": 20,
+        "step": 1,
+        "description": "Shadow Softness"
+    },
+
+    "line-spacing": {
+        "type": "scale",
+        "default": 5,
+        "min": 0,
+        "max": 50,
+        "step": 1,
+        "description": "Spacing Between Time & Date"
+    },
+
+    "font-opacity": {
+        "type": "scale",
+        "default": 100,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "description": "Text Opacity (%)"
+    }
+}

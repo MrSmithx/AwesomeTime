@@ -1,0 +1,6 @@
+{
+    "uuid": "AwesomeTime@martyn",
+    "name": "Awesome Time",
+    "description": "Displays time in natural language",
+    "max-instances": 1
+}

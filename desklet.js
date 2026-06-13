@@ -3,6 +3,7 @@ const St = imports.gi.St;
 const Mainloop = imports.mainloop;
 const Settings = imports.ui.settings;
 const GLib = imports.gi.GLib;
+const Soup = imports.gi.Soup;
 
 function AwesomeTime(metadata, deskletId) {
     this._init(metadata, deskletId);
@@ -30,8 +31,15 @@ AwesomeTime.prototype = {
             text: ""
         });
 
+        this.weatherLabel = new St.Label({
+            text: ""
+        });
+
+        this._httpSession = new Soup.Session();
+
         this.box.add_child(this.timeLabel);
         this.box.add_child(this.dateLabel);
+        this.box.add_child(this.weatherLabel);
 
         this.setContent(this.box);
 
@@ -60,6 +68,17 @@ AwesomeTime.prototype = {
         this._bind("use-noon-midnight", "useNoonMidnight");
         this._bind("date-align", "dateAlign");
         this._bind("date-position", "datePosition");
+        // Weather Bindings
+        this._bind("show-weather", "showWeather");
+        this._bind("weather-font-family", "weatherFontFamily");
+        this._bind("weather-color", "weatherColor");
+        this._bind("weather-units", "weatherUnits");
+        this._bind("weather-show-condition", "weatherShowCondition");
+        this._bind("weather-show-icon", "weatherShowIcon");
+        this._bind("weather-align", "weatherAlign");
+
+        this._bind("weather-city", "weatherCity");
+        this._bind("weather-country", "weatherCountry");
         // Other Bindings
         this._bind("line-spacing", "lineSpacing");
         this._bind("font-opacity", "fontOpacity");
@@ -69,6 +88,14 @@ AwesomeTime.prototype = {
         this._bind("text-shadow-blur", "shadowBlur");
 
         this._refresh();
+
+        this._weatherTimer = Mainloop.timeout_add_seconds(
+            1800,
+            () => {
+                this._updateWeather();
+                return true;
+            }
+        );
     },
 
     _bind: function(key, prop) {
@@ -85,6 +112,7 @@ AwesomeTime.prototype = {
         this._updateStyle();
         this._rebuildLayout();
         this._update();
+        this._updateWeather();
     },
 
     numberToWord: function(number) {
@@ -335,9 +363,290 @@ AwesomeTime.prototype = {
         );
     },
 
+    _updateWeather: function() {
+
+        if (!this.showWeather) {
+            this.weatherLabel.hide();
+            return;
+        }
+
+        this.weatherLabel.show();
+
+        let city = encodeURIComponent(
+            this.weatherCity || "Sydney"
+        );
+
+        let country = encodeURIComponent(
+            this.weatherCountry || "Australia"
+        );
+
+        let geocodeUrl =
+            `https://geocoding-api.open-meteo.com/v1/search` +
+            `?name=${city}` +
+            `&count=1` +
+            `&language=en` +
+            `&format=json`;
+
+        let geocodeMessage =
+            Soup.Message.new("GET", geocodeUrl);
+
+        this._httpSession.send_and_read_async(
+            geocodeMessage,
+            GLib.PRIORITY_DEFAULT,
+            null,
+            (session, result) => {
+
+                try {
+
+                    let bytes =
+                        session.send_and_read_finish(result);
+
+                    let json =
+                        imports.byteArray.toString(
+                            bytes.get_data()
+                        );
+
+                    let data = JSON.parse(json);
+
+                    if (!data.results ||
+                        data.results.length === 0) {
+
+                        this.weatherLabel.set_text(
+                            "Location not found"
+                        );
+
+                        return;
+                    }
+
+                    let lat = data.results[0].latitude;
+                    let lon = data.results[0].longitude;
+
+                    this._fetchWeather(lat, lon);
+
+                } catch (e) {
+
+                    global.logError(e);
+
+                    this.weatherLabel.set_text(
+                        "Weather unavailable"
+                    );
+                }
+            }
+        );
+    },
+
+    _fetchWeather: function(lat, lon) {
+
+        let units = this.weatherUnits || "c";
+
+        let tempUnit =
+            units === "f"
+                ? "fahrenheit"
+                : "celsius";
+
+        let url =
+            `https://api.open-meteo.com/v1/forecast` +
+            `?latitude=${lat}` +
+            `&longitude=${lon}` +
+            `&current=temperature_2m,weather_code` +
+            `&temperature_unit=${tempUnit}` +
+            `&timezone=auto`;
+
+        let message = Soup.Message.new(
+            "GET",
+            url
+        );
+
+        this._httpSession.send_and_read_async(
+            message,
+            GLib.PRIORITY_DEFAULT,
+            null,
+            (session, result) => {
+
+                try {
+
+                    let bytes =
+                        session.send_and_read_finish(result);
+
+                    let json =
+                        imports.byteArray.toString(
+                            bytes.get_data()
+                        );
+
+                    let data = JSON.parse(json);
+
+                    if (!data.current) {
+
+                        this.weatherLabel.set_text(
+                            "Weather unavailable"
+                        );
+
+                        return;
+                    }
+
+                    let temperature =
+                        Math.round(
+                            data.current.temperature_2m
+                        );
+
+                    let weatherCode =
+                        data.current.weather_code;
+
+                    let icon =
+                        this.weatherShowIcon
+                            ? this._weatherCodeToIcon(weatherCode)
+                            : "";
+
+                    let condition =
+                        this.weatherShowCondition
+                            ? this._weatherCodeToText(weatherCode)
+                            : "";
+
+                    let degree =
+                        units === "f"
+                            ? "°F"
+                            : "°C";
+
+                    let parts = [];
+
+                    if (icon)
+                        parts.push(icon);
+
+                    parts.push(
+                        `${temperature}${degree}`
+                    );
+
+                    if (condition)
+                        parts.push(condition);
+
+                    this.weatherLabel.set_text(
+                        parts.join(" ")
+                    );
+
+                } catch (e) {
+
+                    global.logError(
+                        `[Awesome Time] Weather fetch failed: ${e}`
+                    );
+
+                    this.weatherLabel.set_text(
+                        "Weather unavailable"
+                    );
+                }
+            }
+        );
+    },
+
+    _weatherCodeToIcon: function(code) {
+
+        switch (code) {
+
+            case 0:
+                return "☀";
+
+            case 1:
+            case 2:
+                return "🌤";
+
+            case 3:
+                return "☁";
+
+            case 45:
+            case 48:
+                return "🌫";
+
+            case 51:
+            case 53:
+            case 55:
+            case 61:
+            case 63:
+            case 65:
+            case 80:
+            case 81:
+            case 82:
+                return "🌧";
+
+            case 71:
+            case 73:
+            case 75:
+            case 77:
+            case 85:
+            case 86:
+                return "❄";
+
+            case 95:
+            case 96:
+            case 99:
+                return "⛈";
+
+            default:
+                return "🌡";
+        }
+    },
+
+    _weatherCodeToText: function(code) {
+
+        switch (code) {
+
+            case 0:
+                return "Clear";
+
+            case 1:
+                return "Mostly Clear";
+
+            case 2:
+                return "Partly Cloudy";
+
+            case 3:
+                return "Cloudy";
+
+            case 45:
+            case 48:
+                return "Fog";
+
+            case 51:
+            case 53:
+            case 55:
+                return "Drizzle";
+
+            case 61:
+            case 63:
+            case 65:
+                return "Rain";
+
+            case 71:
+            case 73:
+            case 75:
+                return "Snow";
+
+            case 77:
+                return "Snow Grains";
+
+            case 80:
+            case 81:
+            case 82:
+                return "Rain Showers";
+
+            case 85:
+            case 86:
+                return "Snow Showers";
+
+            case 95:
+                return "Thunderstorm";
+
+            case 96:
+            case 99:
+                return "Thunderstorm";
+
+            default:
+                return "Unknown";
+        }
+    },
+
     _updateStyle: function() {
 
-        let alignment = this.dateAlign || "left";
+        let dateAlignment = this.dateAlign || "left";
+        let weatherAlignment = this.weatherAlign || "left";
 
         let timeFont = this._parseFont(
             this.fontFamily || "Sans 24",
@@ -349,18 +658,32 @@ AwesomeTime.prototype = {
             14
         );
 
+        let weatherFont = this._parseFont(
+            this.weatherFontFamily || "Sans 14",
+            14
+        );
+
         this.timeLabel.style = `
             font-family: "${timeFont.family}";
             font-size: ${timeFont.size}px;
-            color: ${this.fontColor};
+            color: ${this.fontColor || "#ffffff"};
             text-shadow: ${this._buildShadow()};
         `;
 
         this.dateLabel.style = `
             font-family: "${dateFont.family}";
             font-size: ${dateFont.size}px;
-            color: ${this.dateColor};
-            text-align: ${alignment};
+            color: ${this.dateColor || "#ffffff"};
+            text-align: ${dateAlignment};
+            text-shadow: ${this._buildShadow()};
+            margin-top: ${(this.lineSpacing || 5)}px;
+        `;
+
+        this.weatherLabel.style = `
+            font-family: "${weatherFont.family}";
+            font-size: ${weatherFont.size}px;
+            color: ${this.weatherColor || "#ffffff"};
+            text-align: ${weatherAlignment};
             text-shadow: ${this._buildShadow()};
             margin-top: ${(this.lineSpacing || 5)}px;
         `;
@@ -459,11 +782,26 @@ AwesomeTime.prototype = {
         }
 
         if (this.datePosition === "above") {
-            this.box.add_child(this.dateLabel);
-            this.box.add_child(this.timeLabel);
+
+            if (this.showDate)
+                this.box.add_child(this.dateLabel);
+
+            if (this.showTime)
+                this.box.add_child(this.timeLabel);
+
+            if (this.showWeather)
+                this.box.add_child(this.weatherLabel);
+
         } else {
-            this.box.add_child(this.timeLabel);
-            this.box.add_child(this.dateLabel);
+
+            if (this.showTime)
+                this.box.add_child(this.timeLabel);
+
+            if (this.showDate)
+                this.box.add_child(this.dateLabel);
+
+            if (this.showWeather)
+                this.box.add_child(this.weatherLabel);
         }
     },
 
@@ -471,6 +809,11 @@ AwesomeTime.prototype = {
         if (this._timer) {
             Mainloop.source_remove(this._timer);
             this._timer = null;
+        }
+
+        if (this._weatherTimer) {
+            Mainloop.source_remove(this._weatherTimer);
+            this._weatherTimer = null;
         }
     }
 };

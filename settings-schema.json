@@ -4,6 +4,7 @@
         "pages": [
           "timePage",
           "datePage",
+          "weatherPage",
           "otherPage"
         ],
 
@@ -21,6 +22,14 @@
           "title": "Date Settings",
           "sections": [
             "dateSection"
+          ]
+        },
+
+        "weatherPage": {
+          "type": "page",
+          "title": "Weather Settings",
+          "sections": [
+            "weatherSection"
           ]
         },
 
@@ -67,6 +76,21 @@
             "use-noon-midnight",
             "date-align",
             "date-position"
+          ]
+        },
+
+        "weatherSection": {
+          "type": "section",
+          "title": "Weather Settings",
+          "keys": [
+            "show-weather",
+            "weather-city",
+            "weather-country",
+            "weather-display-header",
+            "weather-font-family",
+            "weather-color",
+            "weather-units",
+            "weather-align"
           ]
         },
 
@@ -213,6 +237,74 @@
         }
     },
 
+    "show-weather": {
+        "type": "switch",
+        "default": true,
+        "description": "Show Weather"
+    },
+
+    "weather-city": {
+        "type": "entry",
+        "default": "Sydney",
+        "description": "City"
+    },
+
+    "weather-country": {
+        "type": "entry",
+        "default": "Australia",
+        "description": "Country"
+    },
+
+    "weather-display-header": {
+        "type": "header",
+        "description": "Display"
+    },
+
+    "weather-font-family": {
+        "type": "fontchooser",
+        "default": "Sans 14",
+        "description": "Weather Font"
+    },
+
+    "weather-color": {
+        "type": "colorchooser",
+        "default": "#FFFFFF",
+        "description": "Weather Color"
+    },
+
+    "weather-units": {
+        "type": "combobox",
+        "default": "c",
+        "description": "Temperature Units",
+        "options": {
+            "Celsius (°C)": "c",
+            "Fahrenheit (°F)": "f"
+        }
+    },
+
+    "weather-align": {
+        "type": "combobox",
+        "default": "left",
+        "description": "Weather Alignment",
+        "options": {
+            "Left": "left",
+            "Centre": "center",
+            "Right": "right"
+        }
+    },
+
+    "weather-show-condition": {
+        "type": "switch",
+        "default": true,
+        "description": "Show Condition Text"
+    },
+
+    "weather-show-icon": {
+        "type": "switch",
+        "default": true,
+        "description": "Show Weather Icon"
+    },
+
     "text-shadow-enabled": {
         "type": "switch",
         "default": false,
@@ -249,7 +341,7 @@
         "min": 0,
         "max": 50,
         "step": 1,
-        "description": "Spacing Between Time & Date"
+        "description": "Spacing Between Labels"
     },
 
     "font-opacity": {
@@ -258,6 +350,6 @@
         "min": 0,
         "max": 100,
         "step": 1,
-        "description": "Text Opacity (%)"
+        "description": "Text Opacity ( % )"
     }
 }

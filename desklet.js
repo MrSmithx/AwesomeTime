@@ -40,8 +40,7 @@ AwesomeTime.prototype = {
             country: null,
             lat: null,
             lon: null,
-            source: null,
-            key: null
+            source: null
         };
 
         this._httpSession = new Soup.Session();
@@ -81,6 +80,7 @@ AwesomeTime.prototype = {
         this._bind("show-weather", "showWeather");
         this._bind("weather-font-family", "weatherFontFamily");
         this._bind("weather-color", "weatherColor");
+        this._bind("weather-case", "weatherCase");
         this._bind("weather-units", "weatherUnits");
         this._bind("weather-show-condition", "weatherShowCondition");
         this._bind("weather-show-icon", "weatherShowIcon");
@@ -123,6 +123,7 @@ AwesomeTime.prototype = {
         this._updateStyle();
         this._rebuildLayout();
         this._update();
+        this.weatherUnits = (this.weatherUnits || "celsius").toLowerCase();
 
         let mode = (this.weatherLocationMode || "")
             .toLowerCase()
@@ -379,8 +380,6 @@ AwesomeTime.prototype = {
             this.dateLabel.hide();
         }
 
-        const delay = 60 - new Date().getSeconds();
-
         if (this._timer) {
             Mainloop.source_remove(this._timer);
             this._timer = null;
@@ -395,14 +394,6 @@ AwesomeTime.prototype = {
         );
     },
 
-    _getLocationKey: function() {
-
-        if (this.weatherLocationMode === "auto")
-            return "auto";
-
-        return `manual:${this.weatherCity || ""},${this.weatherCountry || ""}`;
-    },
-
     _setLocation: function(city, country, lat, lon, source) {
 
         this._current.city = city;
@@ -410,8 +401,6 @@ AwesomeTime.prototype = {
         this._current.lat = lat;
         this._current.lon = lon;
         this._current.source = source;
-
-        this._current.key = this._getLocationKey();
 
         this._fetchWeather(lat, lon);
     },
@@ -440,7 +429,7 @@ AwesomeTime.prototype = {
                     let data = JSON.parse(json);
 
                     if (data.status !== "success") {
-                        this.weatherLabel.set_text("Location unavailable");
+                        this.weatherLabel.set_text("Location Currently Unavailable");
                         return;
                     }
 
@@ -455,7 +444,7 @@ AwesomeTime.prototype = {
                 } catch (e) {
 
                     global.logError(e);
-                    this.weatherLabel.set_text("Location unavailable");
+                    this.weatherLabel.set_text("Location Currently Unavailable");
                 }
             }
         );
@@ -467,7 +456,7 @@ AwesomeTime.prototype = {
         country = (country || "").trim();
 
         if (!city) {
-            this.weatherLabel.set_text("Enter a city");
+            this.weatherLabel.set_text("Enter a City");
             return;
         }
 
@@ -539,7 +528,7 @@ AwesomeTime.prototype = {
                         }
 
                         this.weatherLabel.set_text(
-                            "Location not found"
+                            "Location Not Found"
                         );
 
                         return;
@@ -560,7 +549,7 @@ AwesomeTime.prototype = {
                     global.logError(e);
 
                     this.weatherLabel.set_text(
-                        "Location unavailable"
+                        "Location Currently Unavailable"
                     );
                 }
             }
@@ -621,7 +610,7 @@ AwesomeTime.prototype = {
             }
 
             this.weatherLabel.set_text(
-                "Detecting location..."
+                "Detecting Location..."
             );
 
             this._detectAutoLocation();
@@ -636,13 +625,13 @@ AwesomeTime.prototype = {
 
         if (!city) {
             this.weatherLabel.set_text(
-                "Enter a city"
+                "Enter a City"
             );
             return;
         }
 
         this.weatherLabel.set_text(
-            "Looking up location..."
+            "Looking up Location..."
         );
 
         this._geocodeLocation(
@@ -656,19 +645,23 @@ AwesomeTime.prototype = {
         if (typeof lat !== "number" ||
             typeof lon !== "number") {
 
-            this.weatherLabel.set_text(
-                "Weather unavailable"
-            );
-
+            this.weatherLabel.set_text("Weather Currently Unavailable");
             return;
         }
+
+        const unit = (this.weatherUnits || "c").toLowerCase();
+
+        const apiUnit =
+            unit === "f"
+                ? "fahrenheit"
+                : "celsius";
 
         let url =
             "https://api.open-meteo.com/v1/forecast" +
             `?latitude=${lat}` +
             `&longitude=${lon}` +
             `&current=temperature_2m,weather_code` +
-            `&temperature_unit=celsius` +
+            `&temperature_unit=${apiUnit}` +
             `&timezone=auto`;
 
         let message = Soup.Message.new("GET", url);
@@ -681,18 +674,14 @@ AwesomeTime.prototype = {
 
                 try {
 
-                    let bytes =
-                        session.send_and_read_finish(result);
+                    let bytes = session.send_and_read_finish(result);
 
-                    let json =
-                        new TextDecoder().decode(bytes.get_data());
+                    let json = imports.byteArray.toString(bytes.get_data());
 
                     let data = JSON.parse(json);
 
                     if (!data.current) {
-                        this.weatherLabel.set_text(
-                            "Weather unavailable"
-                        );
+                        this.weatherLabel.set_text("Weather Currently Unavailable");
                         return;
                     }
 
@@ -700,39 +689,39 @@ AwesomeTime.prototype = {
                         data.current.temperature_2m
                     );
 
+                    let suffix =
+                        this.weatherUnits === "f"
+                            ? "°F"
+                            : "°C";
+
                     let code = data.current.weather_code;
 
                     let icon = this._weatherCodeToIcon(code);
-
                     let condition = this._mapWeatherCode(code);
-
-                    let parts = [];
 
                     let locationText = this._formatLocation(
                         this._current.city,
                         this._current.country
                     );
 
-                    if (locationText)
-                        parts.push(locationText);
+                    let parts = [
+                        locationText,
+                        this.weatherShowIcon ? icon : null,
+                        `${temp}${suffix}`,
+                        this.weatherShowCondition ? condition : null
+                    ].filter(Boolean);
 
-                    if (this.weatherShowIcon && icon)
-                        parts.push(icon);
-
-                    parts.push(`${temp}°C`);
-
-                    if (this.weatherShowCondition && condition)
-                        parts.push(condition);
-
-                    this.weatherLabel.set_text(parts.join(" "));
+                    this.weatherLabel.set_text(
+                        this._applyTextCase(parts.join(" "),
+                            this.weatherCase
+                        )
+                    );
 
                 } catch (e) {
 
-                    global.logError(e);
+                    global.logError("[Awesome Time] Async error: " + e);
 
-                    this.weatherLabel.set_text(
-                        "Weather unavailable"
-                    );
+                    this.weatherLabel.set_text("Weather Currently Unavailable");
                 }
             }
         );

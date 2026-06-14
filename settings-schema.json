@@ -29,7 +29,8 @@
           "type": "page",
           "title": "Weather Settings",
           "sections": [
-            "weatherSection"
+            "weatherSection",
+            "weatherLocationSection"
           ]
         },
 
@@ -84,13 +85,24 @@
           "title": "Weather Settings",
           "keys": [
             "show-weather",
-            "weather-city",
-            "weather-country",
-            "weather-display-header",
             "weather-font-family",
             "weather-color",
+            "weather-case",
             "weather-units",
+            "weather-show-condition",
+            "weather-show-icon",
             "weather-align"
+          ]
+        },
+
+        "weatherLocationSection": {
+          "type": "section",
+          "title": "Weather Location Settings",
+          "keys": [
+            "weather-location-mode",
+            "weather-city",
+            "weather-country",
+            "weather-location-display"
           ]
         },
 
@@ -246,18 +258,35 @@
     "weather-city": {
         "type": "entry",
         "default": "Sydney",
-        "description": "City"
+        "description": "City [ User Defined ]"
     },
 
     "weather-country": {
         "type": "entry",
         "default": "Australia",
-        "description": "Country"
+        "description": "Country [ User Defined ]"
     },
 
-    "weather-display-header": {
-        "type": "header",
-        "description": "Display"
+    "weather-location-mode": {
+        "type": "combobox",
+        "default": "auto",
+        "description": "Location Source [ IP Location }",
+        "options": {
+            "Automatic": "auto",
+            "Manual": "manual"
+        }
+    },
+
+    "weather-location-display": {
+        "type": "combobox",
+        "default": "city-country",
+        "description": "Weather Location Display",
+        "options": {
+            "None": "none",
+            "City": "city",
+            "Country": "country",
+            "City, Country": "city-country"
+        }
     },
 
     "weather-font-family": {
@@ -270,6 +299,18 @@
         "type": "colorchooser",
         "default": "#FFFFFF",
         "description": "Weather Color"
+    },
+
+    "weather-case": {
+        "type": "combobox",
+        "default": "normal",
+        "description": "Weather Text Case",
+        "options": {
+            "Normal": "normal",
+            "UPPERCASE": "upper",
+            "lowercase": "lower",
+            "Capitalise Words": "title"
+        }
     },
 
     "weather-units": {

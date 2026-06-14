@@ -35,6 +35,15 @@ AwesomeTime.prototype = {
             text: ""
         });
 
+        this._current = {
+            city: null,
+            country: null,
+            lat: null,
+            lon: null,
+            source: null,
+            key: null
+        };
+
         this._httpSession = new Soup.Session();
 
         this.box.add_child(this.timeLabel);
@@ -76,9 +85,10 @@ AwesomeTime.prototype = {
         this._bind("weather-show-condition", "weatherShowCondition");
         this._bind("weather-show-icon", "weatherShowIcon");
         this._bind("weather-align", "weatherAlign");
-
         this._bind("weather-city", "weatherCity");
         this._bind("weather-country", "weatherCountry");
+        this._bind("weather-location-mode", "weatherLocationMode");
+        this._bind("weather-location-display", "weatherLocationDisplay");
         // Other Bindings
         this._bind("line-spacing", "lineSpacing");
         this._bind("font-opacity", "fontOpacity");
@@ -109,9 +119,28 @@ AwesomeTime.prototype = {
     },
 
     _refresh: function() {
+
         this._updateStyle();
         this._rebuildLayout();
         this._update();
+
+        let mode = (this.weatherLocationMode || "")
+            .toLowerCase()
+            .trim();
+
+        if (this._lastMode !== mode) {
+
+            this._current = {
+                city: null,
+                country: null,
+                lat: null,
+                lon: null,
+                source: null
+            };
+
+            this._lastMode = mode;
+        }
+
         this._updateWeather();
     },
 
@@ -358,40 +387,44 @@ AwesomeTime.prototype = {
         }
 
         this._timer = Mainloop.timeout_add_seconds(
-            delay,
-            this._update.bind(this)
+            60,
+            () => {
+                this._update();
+                return true;
+            }
         );
     },
 
-    _updateWeather: function() {
+    _getLocationKey: function() {
 
-        if (!this.showWeather) {
-            this.weatherLabel.hide();
-            return;
-        }
+        if (this.weatherLocationMode === "auto")
+            return "auto";
 
-        this.weatherLabel.show();
+        return `manual:${this.weatherCity || ""},${this.weatherCountry || ""}`;
+    },
 
-        let city = encodeURIComponent(
-            this.weatherCity || "Sydney"
+    _setLocation: function(city, country, lat, lon, source) {
+
+        this._current.city = city;
+        this._current.country = country;
+        this._current.lat = lat;
+        this._current.lon = lon;
+        this._current.source = source;
+
+        this._current.key = this._getLocationKey();
+
+        this._fetchWeather(lat, lon);
+    },
+
+    _detectAutoLocation: function() {
+
+        let message = Soup.Message.new(
+            "GET",
+            "http://ip-api.com/json/"
         );
-
-        let country = encodeURIComponent(
-            this.weatherCountry || "Australia"
-        );
-
-        let geocodeUrl =
-            `https://geocoding-api.open-meteo.com/v1/search` +
-            `?name=${city}` +
-            `&count=1` +
-            `&language=en` +
-            `&format=json`;
-
-        let geocodeMessage =
-            Soup.Message.new("GET", geocodeUrl);
 
         this._httpSession.send_and_read_async(
-            geocodeMessage,
+            message,
             GLib.PRIORITY_DEFAULT,
             null,
             (session, result) => {
@@ -402,55 +435,70 @@ AwesomeTime.prototype = {
                         session.send_and_read_finish(result);
 
                     let json =
-                        imports.byteArray.toString(
-                            bytes.get_data()
-                        );
+                        new TextDecoder().decode(bytes.get_data());
 
                     let data = JSON.parse(json);
 
-                    if (!data.results ||
-                        data.results.length === 0) {
-
-                        this.weatherLabel.set_text(
-                            "Location not found"
-                        );
-
+                    if (data.status !== "success") {
+                        this.weatherLabel.set_text("Location unavailable");
                         return;
                     }
 
-                    let lat = data.results[0].latitude;
-                    let lon = data.results[0].longitude;
-
-                    this._fetchWeather(lat, lon);
+                    this._setLocation(
+                        data.city,
+                        data.country,
+                        data.lat,
+                        data.lon,
+                        "auto"
+                    );
 
                 } catch (e) {
 
                     global.logError(e);
-
-                    this.weatherLabel.set_text(
-                        "Weather unavailable"
-                    );
+                    this.weatherLabel.set_text("Location unavailable");
                 }
             }
         );
     },
 
-    _fetchWeather: function(lat, lon) {
+    _geocodeLocation: function(city, country) {
 
-        let units = this.weatherUnits || "c";
+        city = (city || "").trim();
+        country = (country || "").trim();
 
-        let tempUnit =
-            units === "f"
-                ? "fahrenheit"
-                : "celsius";
+        if (!city) {
+            this.weatherLabel.set_text("Enter a city");
+            return;
+        }
+
+        switch (country.toLowerCase()) {
+
+            case "uk":
+                country = "United Kingdom";
+                break;
+
+            case "usa":
+                country = "United States";
+                break;
+
+            case "uae":
+                country = "United Arab Emirates";
+                break;
+        }
+
+        let searchText = city;
+
+        if (country)
+            searchText = `${city}, ${country}`;
+
+        let query = encodeURIComponent(searchText);
 
         let url =
-            `https://api.open-meteo.com/v1/forecast` +
-            `?latitude=${lat}` +
-            `&longitude=${lon}` +
-            `&current=temperature_2m,weather_code` +
-            `&temperature_unit=${tempUnit}` +
-            `&timezone=auto`;
+            "https://geocoding-api.open-meteo.com/v1/search" +
+            `?name=${query}` +
+            "&count=1" +
+            "&language=en" +
+            "&format=json";
 
         let message = Soup.Message.new(
             "GET",
@@ -469,65 +517,218 @@ AwesomeTime.prototype = {
                         session.send_and_read_finish(result);
 
                     let json =
-                        imports.byteArray.toString(
+                        new TextDecoder().decode(
                             bytes.get_data()
                         );
 
                     let data = JSON.parse(json);
 
-                    if (!data.current) {
+                    // No results returned
+                    if (!data.results ||
+                        data.results.length === 0) {
+
+                        // Retry city-only even if country was supplied
+                        if (country) {
+
+                            this._geocodeLocation(
+                                city,
+                                ""
+                            );
+
+                            return;
+                        }
 
                         this.weatherLabel.set_text(
-                            "Weather unavailable"
+                            "Location not found"
                         );
 
                         return;
                     }
 
-                    let temperature =
-                        Math.round(
-                            data.current.temperature_2m
-                        );
+                    let loc = data.results[0];
 
-                    let weatherCode =
-                        data.current.weather_code;
-
-                    let icon =
-                        this.weatherShowIcon
-                            ? this._weatherCodeToIcon(weatherCode)
-                            : "";
-
-                    let condition =
-                        this.weatherShowCondition
-                            ? this._weatherCodeToText(weatherCode)
-                            : "";
-
-                    let degree =
-                        units === "f"
-                            ? "°F"
-                            : "°C";
-
-                    let parts = [];
-
-                    if (icon)
-                        parts.push(icon);
-
-                    parts.push(
-                        `${temperature}${degree}`
-                    );
-
-                    if (condition)
-                        parts.push(condition);
-
-                    this.weatherLabel.set_text(
-                        parts.join(" ")
+                    this._setLocation(
+                        loc.name,
+                        loc.country,
+                        loc.latitude,
+                        loc.longitude,
+                        "manual"
                     );
 
                 } catch (e) {
 
-                    global.logError(
-                        `[Awesome Time] Weather fetch failed: ${e}`
+                    global.logError(e);
+
+                    this.weatherLabel.set_text(
+                        "Location unavailable"
                     );
+                }
+            }
+        );
+    },
+
+    _formatLocation: function(city, country) {
+
+        switch (this.weatherLocationDisplay) {
+
+            case "none":
+                return "";
+
+            case "city":
+                return city || "";
+
+            case "country":
+                return country || "";
+
+            case "city-country":
+            default:
+                if (city && country)
+                    return `${city}, ${country}`;
+
+                return city || country || "";
+        }
+    },
+
+    _updateWeather: function() {
+
+        if (!this.showWeather) {
+            this.weatherLabel.hide();
+            return;
+        }
+
+        this.weatherLabel.show();
+
+        let mode = (this.weatherLocationMode || "")
+            .toLowerCase()
+            .trim();
+
+        // -----------------------------
+        // AUTO MODE
+        // -----------------------------
+        if (mode === "auto") {
+
+            // Reuse cached auto location if available
+            if (this._current.source === "auto" &&
+                this._current.lat != null &&
+                this._current.lon != null) {
+
+                this._fetchWeather(
+                    this._current.lat,
+                    this._current.lon
+                );
+
+                return;
+            }
+
+            this.weatherLabel.set_text(
+                "Detecting location..."
+            );
+
+            this._detectAutoLocation();
+            return;
+        }
+
+        // -----------------------------
+        // MANUAL MODE
+        // -----------------------------
+        let city = (this.weatherCity || "").trim();
+        let country = (this.weatherCountry || "").trim();
+
+        if (!city) {
+            this.weatherLabel.set_text(
+                "Enter a city"
+            );
+            return;
+        }
+
+        this.weatherLabel.set_text(
+            "Looking up location..."
+        );
+
+        this._geocodeLocation(
+            city,
+            country
+        );
+    },
+
+    _fetchWeather: function(lat, lon) {
+
+        if (typeof lat !== "number" ||
+            typeof lon !== "number") {
+
+            this.weatherLabel.set_text(
+                "Weather unavailable"
+            );
+
+            return;
+        }
+
+        let url =
+            "https://api.open-meteo.com/v1/forecast" +
+            `?latitude=${lat}` +
+            `&longitude=${lon}` +
+            `&current=temperature_2m,weather_code` +
+            `&temperature_unit=celsius` +
+            `&timezone=auto`;
+
+        let message = Soup.Message.new("GET", url);
+
+        this._httpSession.send_and_read_async(
+            message,
+            GLib.PRIORITY_DEFAULT,
+            null,
+            (session, result) => {
+
+                try {
+
+                    let bytes =
+                        session.send_and_read_finish(result);
+
+                    let json =
+                        new TextDecoder().decode(bytes.get_data());
+
+                    let data = JSON.parse(json);
+
+                    if (!data.current) {
+                        this.weatherLabel.set_text(
+                            "Weather unavailable"
+                        );
+                        return;
+                    }
+
+                    let temp = Math.round(
+                        data.current.temperature_2m
+                    );
+
+                    let code = data.current.weather_code;
+
+                    let icon = this._weatherCodeToIcon(code);
+
+                    let condition = this._mapWeatherCode(code);
+
+                    let parts = [];
+
+                    let locationText = this._formatLocation(
+                        this._current.city,
+                        this._current.country
+                    );
+
+                    if (locationText)
+                        parts.push(locationText);
+
+                    if (this.weatherShowIcon && icon)
+                        parts.push(icon);
+
+                    parts.push(`${temp}°C`);
+
+                    if (this.weatherShowCondition && condition)
+                        parts.push(condition);
+
+                    this.weatherLabel.set_text(parts.join(" "));
+
+                } catch (e) {
+
+                    global.logError(e);
 
                     this.weatherLabel.set_text(
                         "Weather unavailable"
@@ -542,18 +743,18 @@ AwesomeTime.prototype = {
         switch (code) {
 
             case 0:
-                return "☀";
+                return "☀️";
 
             case 1:
             case 2:
-                return "🌤";
+                return "🌤️";
 
             case 3:
-                return "☁";
+                return "☁️";
 
             case 45:
             case 48:
-                return "🌫";
+                return "🌫️";
 
             case 51:
             case 53:
@@ -564,7 +765,7 @@ AwesomeTime.prototype = {
             case 80:
             case 81:
             case 82:
-                return "🌧";
+                return "🌦️";
 
             case 71:
             case 73:
@@ -572,19 +773,19 @@ AwesomeTime.prototype = {
             case 77:
             case 85:
             case 86:
-                return "❄";
+                return "❄️";
 
             case 95:
             case 96:
             case 99:
-                return "⛈";
+                return "⛈️";
 
             default:
                 return "🌡";
         }
     },
 
-    _weatherCodeToText: function(code) {
+    _mapWeatherCode: function(code) {
 
         switch (code) {
 

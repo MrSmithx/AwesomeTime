@@ -9,6 +9,47 @@ function AwesomeTime(metadata, deskletId) {
     this._init(metadata, deskletId);
 }
 
+const WEATHER_CODE_MAP = {
+    0:  ["☀️", "Clear"],
+    1:  ["🌤️", "Mostly Clear"],
+    2:  ["🌤️", "Partly Cloudy"],
+    3:  ["☁️", "Cloudy"],
+
+    45: ["🌫️", "Fog"],
+    48: ["🌫️", "Fog"],
+
+    51: ["🌦️", "Drizzle"],
+    53: ["🌦️", "Drizzle"],
+    55: ["🌦️", "Drizzle"],
+
+    61: ["🌦️", "Rain"],
+    63: ["🌦️", "Rain"],
+    65: ["🌦️", "Rain"],
+
+    80: ["🌦️", "Rain Showers"],
+    81: ["🌦️", "Rain Showers"],
+    82: ["🌦️", "Rain Showers"],
+
+    71: ["❄️", "Snow"],
+    73: ["❄️", "Snow"],
+    75: ["❄️", "Snow"],
+    77: ["❄️", "Snow Grains"],
+
+    85: ["❄️", "Snow Showers"],
+    86: ["❄️", "Snow Showers"],
+
+    95: ["⛈️", "Thunderstorm"],
+    96: ["⛈️", "Thunderstorm"],
+    99: ["⛈️", "Thunderstorm"]
+};
+
+const MSG_WEATHER_UNAVAILABLE = "Weather Currently Unavailable";
+const MSG_LOCATION_UNAVAILABLE = "Location Currently Unavailable";
+const MSG_ENTER_CITY = "Enter a City";
+const MSG_LOOKING_UP = "Looking up Location...";
+const MSG_DETECTING = "Detecting Location...";
+const MSG_NOT_FOUND = "Location Not Found";
+
 AwesomeTime.prototype = {
     __proto__: Desklet.Desklet.prototype,
 
@@ -35,6 +76,10 @@ AwesomeTime.prototype = {
             text: ""
         });
 
+        this.sunLabel = new St.Label({
+            text: ""
+        });
+
         this._current = {
             city: null,
             country: null,
@@ -43,11 +88,16 @@ AwesomeTime.prototype = {
             source: null
         };
 
+        this.weatherShowSun = (this.weatherShowSun === undefined)
+            ? false
+            : this.weatherShowSun;
+
         this._httpSession = new Soup.Session();
 
         this.box.add_child(this.timeLabel);
         this.box.add_child(this.dateLabel);
         this.box.add_child(this.weatherLabel);
+        this.box.add_child(this.sunLabel);
 
         this.setContent(this.box);
 
@@ -84,6 +134,9 @@ AwesomeTime.prototype = {
         this._bind("weather-units", "weatherUnits");
         this._bind("weather-show-condition", "weatherShowCondition");
         this._bind("weather-show-icon", "weatherShowIcon");
+        this._bind("weather-show-sun", "weatherShowSun");
+        this._bind("weather-sun-font-family", "weatherSunFontFamily");
+        this._bind("weather-sun-color", "weatherSunColor");
         this._bind("weather-align", "weatherAlign");
         this._bind("weather-city", "weatherCity");
         this._bind("weather-country", "weatherCountry");
@@ -385,11 +438,23 @@ AwesomeTime.prototype = {
             this._timer = null;
         }
 
-        this._timer = Mainloop.timeout_add_seconds(
-            60,
+        const delay = 60 - new Date().getSeconds();
+
+        Mainloop.timeout_add_seconds(
+            delay,
             () => {
                 this._update();
-                return true;
+
+                this._timer =
+                    Mainloop.timeout_add_seconds(
+                        60,
+                        () => {
+                            this._update();
+                            return true;
+                        }
+                    );
+
+                return false;
             }
         );
     },
@@ -429,7 +494,7 @@ AwesomeTime.prototype = {
                     let data = JSON.parse(json);
 
                     if (data.status !== "success") {
-                        this.weatherLabel.set_text("Location Currently Unavailable");
+                        this.weatherLabel.set_text(MSG_LOCATION_UNAVAILABLE);
                         return;
                     }
 
@@ -444,7 +509,7 @@ AwesomeTime.prototype = {
                 } catch (e) {
 
                     global.logError(e);
-                    this.weatherLabel.set_text("Location Currently Unavailable");
+                    this.weatherLabel.set_text(MSG_LOCATION_UNAVAILABLE);
                 }
             }
         );
@@ -456,7 +521,7 @@ AwesomeTime.prototype = {
         country = (country || "").trim();
 
         if (!city) {
-            this.weatherLabel.set_text("Enter a City");
+            this.weatherLabel.set_text(MSG_ENTER_CITY);
             return;
         }
 
@@ -528,7 +593,7 @@ AwesomeTime.prototype = {
                         }
 
                         this.weatherLabel.set_text(
-                            "Location Not Found"
+                            MSG_NOT_FOUND
                         );
 
                         return;
@@ -549,7 +614,7 @@ AwesomeTime.prototype = {
                     global.logError(e);
 
                     this.weatherLabel.set_text(
-                        "Location Currently Unavailable"
+                        MSG_LOCATION_UNAVAILABLE
                     );
                 }
             }
@@ -610,7 +675,7 @@ AwesomeTime.prototype = {
             }
 
             this.weatherLabel.set_text(
-                "Detecting Location..."
+                MSG_DETECTING
             );
 
             this._detectAutoLocation();
@@ -625,13 +690,13 @@ AwesomeTime.prototype = {
 
         if (!city) {
             this.weatherLabel.set_text(
-                "Enter a City"
+                MSG_ENTER_CITY
             );
             return;
         }
 
         this.weatherLabel.set_text(
-            "Looking up Location..."
+            MSG_LOOKING_UP
         );
 
         this._geocodeLocation(
@@ -645,7 +710,7 @@ AwesomeTime.prototype = {
         if (typeof lat !== "number" ||
             typeof lon !== "number") {
 
-            this.weatherLabel.set_text("Weather Currently Unavailable");
+            this.weatherLabel.set_text(MSG_WEATHER_UNAVAILABLE);
             return;
         }
 
@@ -662,6 +727,7 @@ AwesomeTime.prototype = {
             `&longitude=${lon}` +
             `&current=temperature_2m,weather_code` +
             `&temperature_unit=${apiUnit}` +
+            `&daily=sunrise,sunset` +
             `&timezone=auto`;
 
         let message = Soup.Message.new("GET", url);
@@ -681,7 +747,7 @@ AwesomeTime.prototype = {
                     let data = JSON.parse(json);
 
                     if (!data.current) {
-                        this.weatherLabel.set_text("Weather Currently Unavailable");
+                        this.weatherLabel.set_text(MSG_WEATHER_UNAVAILABLE);
                         return;
                     }
 
@@ -704,6 +770,28 @@ AwesomeTime.prototype = {
                         this._current.country
                     );
 
+                    let sunrise = null;
+                    let sunset = null;
+
+                    if (data.daily &&
+                        data.daily.sunrise &&
+                        data.daily.sunset) {
+
+                        sunrise = data.daily.sunrise[0];
+                        sunset = data.daily.sunset[0];
+                    }
+
+                    let sunriseText = this._formatTime(sunrise);
+                    let sunsetText = this._formatTime(sunset);
+
+                    let sunParts = [];
+
+                    if (sunriseText)
+                        sunParts.push(`☀️ ${sunriseText}`);
+
+                    if (sunsetText)
+                        sunParts.push(`🌙 ${sunsetText}`);
+
                     let parts = [
                         locationText,
                         this.weatherShowIcon ? icon : null,
@@ -716,121 +804,36 @@ AwesomeTime.prototype = {
                             this.weatherCase
                         )
                     );
+                    this.sunLabel.set_text(sunParts.join(" "));
 
                 } catch (e) {
 
                     global.logError("[Awesome Time] Async error: " + e);
 
-                    this.weatherLabel.set_text("Weather Currently Unavailable");
+                    this.weatherLabel.set_text(MSG_WEATHER_UNAVAILABLE);
                 }
             }
         );
     },
 
     _weatherCodeToIcon: function(code) {
-
-        switch (code) {
-
-            case 0:
-                return "☀️";
-
-            case 1:
-            case 2:
-                return "🌤️";
-
-            case 3:
-                return "☁️";
-
-            case 45:
-            case 48:
-                return "🌫️";
-
-            case 51:
-            case 53:
-            case 55:
-            case 61:
-            case 63:
-            case 65:
-            case 80:
-            case 81:
-            case 82:
-                return "🌦️";
-
-            case 71:
-            case 73:
-            case 75:
-            case 77:
-            case 85:
-            case 86:
-                return "❄️";
-
-            case 95:
-            case 96:
-            case 99:
-                return "⛈️";
-
-            default:
-                return "🌡";
-        }
+        return (WEATHER_CODE_MAP[code] && WEATHER_CODE_MAP[code][0]) || "🌡";
     },
 
     _mapWeatherCode: function(code) {
+        return (WEATHER_CODE_MAP[code] && WEATHER_CODE_MAP[code][1]) || "Unknown";
+    },
 
-        switch (code) {
+    _formatTime: function(isoString) {
+        if (!isoString)
+            return null;
 
-            case 0:
-                return "Clear";
+        let d = new Date(isoString);
 
-            case 1:
-                return "Mostly Clear";
-
-            case 2:
-                return "Partly Cloudy";
-
-            case 3:
-                return "Cloudy";
-
-            case 45:
-            case 48:
-                return "Fog";
-
-            case 51:
-            case 53:
-            case 55:
-                return "Drizzle";
-
-            case 61:
-            case 63:
-            case 65:
-                return "Rain";
-
-            case 71:
-            case 73:
-            case 75:
-                return "Snow";
-
-            case 77:
-                return "Snow Grains";
-
-            case 80:
-            case 81:
-            case 82:
-                return "Rain Showers";
-
-            case 85:
-            case 86:
-                return "Snow Showers";
-
-            case 95:
-                return "Thunderstorm";
-
-            case 96:
-            case 99:
-                return "Thunderstorm";
-
-            default:
-                return "Unknown";
-        }
+        return d.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
     },
 
     _updateStyle: function() {
@@ -850,6 +853,11 @@ AwesomeTime.prototype = {
 
         let weatherFont = this._parseFont(
             this.weatherFontFamily || "Sans 14",
+            14
+        );
+
+        let weatherSunFont = this._parseFont(
+            this.weatherSunFontFamily || "Sans 14",
             14
         );
 
@@ -878,11 +886,28 @@ AwesomeTime.prototype = {
             margin-top: ${(this.lineSpacing || 5)}px;
         `;
 
+        this.sunLabel.style = `
+            font-family: "${weatherSunFont.family}";
+            font-size: ${weatherSunFont.size - 2}px;
+            color: ${this.weatherSunColor || "#ffffff"};
+            text-align: ${weatherAlignment};
+            text-shadow: ${this._buildShadow()};
+            margin-top: 3px;
+        `;
+
         this.timeLabel.opacity = Math.round(
             (this.fontOpacity || 100) * 2.55
         );
 
         this.dateLabel.opacity = Math.round(
+            (this.fontOpacity || 100) * 2.55
+        );
+
+        this.weatherLabel.opacity = Math.round(
+            (this.fontOpacity || 100) * 2.55
+        );
+
+        this.sunLabel.opacity = Math.round(
             (this.fontOpacity || 100) * 2.55
         );
     },
@@ -982,6 +1007,9 @@ AwesomeTime.prototype = {
             if (this.showWeather)
                 this.box.add_child(this.weatherLabel);
 
+            if (this.weatherShowSun)
+                this.box.add_child(this.sunLabel);
+
         } else {
 
             if (this.showTime)
@@ -992,6 +1020,9 @@ AwesomeTime.prototype = {
 
             if (this.showWeather)
                 this.box.add_child(this.weatherLabel);
+
+            if (this.weatherShowSun)
+                this.box.add_child(this.sunLabel);
         }
     },
 
@@ -1005,6 +1036,7 @@ AwesomeTime.prototype = {
             Mainloop.source_remove(this._weatherTimer);
             this._weatherTimer = null;
         }
+        Desklet.Desklet.prototype.destroy.call(this);
     }
 };
 

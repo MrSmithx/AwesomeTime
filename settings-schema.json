@@ -29,14 +29,14 @@
           "type": "page",
           "title": "Weather Settings",
           "sections": [
-            "weatherSection",
-            "weatherLocationSection"
+            "weatherLocationSection",
+            "weatherSection"
           ]
         },
 
         "otherPage": {
           "type": "page",
-          "title": "Other Settings",
+          "title": "Appearance",
           "sections": [
             "shadowSection",
             "otherSection"
@@ -45,13 +45,13 @@
 
         "timeSection": {
           "type": "section",
-          "title": "Time Settings",
+          "title": "Display",
           "keys": [
             "show-time",
-            "font-family",
-            "font-color",
             "time-prefix",
-            "text-case"
+            "text-case",
+            "font-family",
+            "font-color"
           ]
         },
 
@@ -66,32 +66,34 @@
 
         "dateSection": {
           "type": "section",
-          "title": "Date Settings",
+          "title": "Display",
           "keys": [
             "show-date",
-            "date-font-family",
             "date-format",
-            "date-color",
             "date-prefix",
             "date-case",
-            "use-noon-midnight",
             "date-align",
-            "date-position"
+            "date-position",
+            "date-font-family",
+            "date-color",
+            "use-noon-midnight"
           ]
         },
 
         "weatherSection": {
           "type": "section",
-          "title": "Weather Settings",
+          "title": "Display",
           "keys": [
-            "show-weather",
             "weather-font-family",
             "weather-color",
             "weather-case",
+            "weather-align",
             "weather-units",
             "weather-show-condition",
             "weather-show-icon",
-            "weather-align"
+            "weather-show-sun",
+            "weather-sun-font-family",
+            "weather-sun-color"
           ]
         },
 
@@ -99,6 +101,7 @@
           "type": "section",
           "title": "Weather Location Settings",
           "keys": [
+            "show-weather",
             "weather-location-mode",
             "weather-city",
             "weather-country",
@@ -106,23 +109,23 @@
           ]
         },
 
-        "otherSection": {
-          "type": "section",
-          "title": "Other Settings",
-          "keys": [
-            "line-spacing",
-            "font-opacity"
-          ]
-        },
-
         "shadowSection": {
           "type": "section",
-          "title": "Shadow Settings",
+          "title": "Text Shadow ",
           "keys": [
             "text-shadow-enabled",
             "text-shadow-color",
             "text-shadow-offset",
             "text-shadow-blur"
+          ]
+        },
+
+        "otherSection": {
+          "type": "section",
+          "title": "General Appearance",
+          "keys": [
+            "line-spacing",
+            "font-opacity"
           ]
         }
     },
@@ -258,19 +261,19 @@
     "weather-city": {
         "type": "entry",
         "default": "Sydney",
-        "description": "City [ User Defined ]"
+        "description": "City"
     },
 
     "weather-country": {
         "type": "entry",
         "default": "Australia",
-        "description": "Country [ User Defined ]"
+        "description": "Country"
     },
 
     "weather-location-mode": {
         "type": "combobox",
         "default": "auto",
-        "description": "Location Source [ IP Location }",
+        "description": "Location Source [ IP Location ]",
         "options": {
             "Automatic": "auto",
             "Manual": "manual"
@@ -280,7 +283,7 @@
     "weather-location-display": {
         "type": "combobox",
         "default": "city-country",
-        "description": "Weather Location Display",
+        "description": "Location Display",
         "options": {
             "None": "none",
             "City": "city",
@@ -337,13 +340,31 @@
     "weather-show-condition": {
         "type": "switch",
         "default": true,
-        "description": "Show Condition Text"
+        "description": "Show Conditions"
     },
 
     "weather-show-icon": {
         "type": "switch",
         "default": true,
-        "description": "Show Weather Icon"
+        "description": "Show Conditions Icon"
+    },
+
+    "weather-show-sun": {
+        "type": "switch",
+        "default": false,
+        "description": "Show Sunrise & Sunset"
+    },
+
+    "weather-sun-font-family": {
+        "type": "fontchooser",
+        "default": "Sans 14",
+        "description": "Sunrise & Sunset Font"
+    },
+
+    "weather-sun-color": {
+        "type": "colorchooser",
+        "default": "#FFFFFF",
+        "description": "Sunrise & Sunset Color"
     },
 
     "text-shadow-enabled": {

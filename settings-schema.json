@@ -13,7 +13,8 @@
           "title": "Time Settings",
           "sections": [
             "timeSection",
-            "fuzzySection"
+            "fuzzySection",
+            "transitionSection"
           ]
         },
 
@@ -62,6 +63,16 @@
             "fuzzy-time",
             "fuzzy-level"
           ]
+        },
+
+        "transitionSection": {
+            "type": "section",
+            "title": "Transition Settings",
+            "keys": [
+                "time-transition",
+                "transition-duration",
+                "transition-distance"
+            ]
         },
 
         "dateSection": {
@@ -125,7 +136,9 @@
           "title": "General Appearance",
           "keys": [
             "line-spacing",
-            "font-opacity"
+            "font-opacity",
+            "label-background-color",
+            "label-background-opacity"
           ]
         }
     },
@@ -164,6 +177,39 @@
             "lowercase": "lower",
             "Capitalise Words": "title"
         }
+    },
+
+    "time-transition": {
+        "type": "combobox",
+        "default": "fade",
+        "description": "Time Transition",
+        "options": {
+            "None": "none",
+            "Fade": "fade",
+            "Slide": "slide",
+            "Crossfade": "crossfade",
+            "Flip": "flip"
+        }
+    },
+
+    "transition-duration": {
+        "type": "spinbutton",
+        "default": 300,
+        "min": 50,
+        "max": 2000,
+        "step": 50,
+        "units": "",
+        "description": "Transition Duration [ ms ]"
+    },
+
+    "transition-distance": {
+        "type": "spinbutton",
+        "default": 20,
+        "min": 5,
+        "max": 100,
+        "step": 1,
+        "units": "",
+        "description": "Slide Distance [ px ]"
     },
 
     "show-date": {
@@ -413,5 +459,20 @@
         "max": 100,
         "step": 1,
         "description": "Text Opacity ( % )"
+    },
+
+    "label-background-color": {
+        "type": "colorchooser",
+        "default": "#000000",
+        "description": "Label Background Color"
+    },
+
+    "label-background-opacity": {
+        "type": "scale",
+        "default": 0,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "description": "Label Background Opacity"
     }
 }

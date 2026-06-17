@@ -188,7 +188,9 @@
             "Fade": "fade",
             "Slide": "slide",
             "Crossfade": "crossfade",
-            "Flip": "flip"
+            "Flip X": "flipX",
+            "Flip Y": "flipY",
+            "Zoom": "zoom"
         }
     },
 

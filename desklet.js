@@ -72,17 +72,26 @@ AwesomeTime.prototype = {
         this.setHeader("Awesome Time");
 
         this.box = new St.BoxLayout({
-            vertical: true
+            vertical: true,
+            x_align: St.Align.START,
+            x_expand: true
         });
 
         this.timeLabel = new St.Label({
-            text: ""
+            text: "",
+            x_align: St.Align.START,
+            x_expand: true
         });
 
         this.timeLabel2 = new St.Label({
             text: "",
-            opacity: 0
+            opacity: 0,
+            x_align: St.Align.START,
+            x_expand: true
         });
+
+        this.timeLabel.set_pivot_point(0.5, 0.5);
+        this.timeLabel2.set_pivot_point(0.5, 0.5);
 
         this.dateLabel = new St.Label({
             text: ""
@@ -110,7 +119,16 @@ AwesomeTime.prototype = {
 
         this._httpSession = new Soup.Session();
 
-        this.box.add_child(this.timeLabel);
+        // Overlay container for transitions
+        this.timeContainer = new St.Widget({
+            layout_manager: new Clutter.BinLayout(),
+            x_expand: true,
+        });
+
+        this.timeContainer.add_child(this.timeLabel);
+        this.timeContainer.add_child(this.timeLabel2);
+
+        this.box.add_child(this.timeContainer);
         this.box.add_child(this.dateLabel);
         this.box.add_child(this.weatherLabel);
         this.box.add_child(this.sunLabel);
@@ -432,19 +450,27 @@ AwesomeTime.prototype = {
         switch (this.timeTransition) {
 
             case "fade":
-                this._transitionFade(this.timeLabel, newText);
+                this._transitionFade(newText);
                 break;
 
             case "slide":
-                this._transitionSlide(this.timeLabel, newText);
+                this._transitionSlide(newText);
                 break;
 
             case "crossfade":
                 this._transitionCrossfade(newText);
                 break;
 
-            case "flip":
-                this._transitionFlip(this.timeLabel, newText);
+            case "flipX":
+                this._transitionFlipX(newText);
+                break;
+
+            case "flipY":
+                this._transitionFlipY(newText);
+                break;
+
+            case "zoom":
+                this._transitionZoom(newText);
                 break;
 
             case "none":
@@ -454,89 +480,159 @@ AwesomeTime.prototype = {
         }
     },
 
-    _transitionFade: function(label, newText) {
+    _transitionFade: function(newText) {
 
-        if (label.get_text() === newText)
+        if (this.timeLabel.get_text() === newText)
             return;
 
-        let targetOpacity = Math.round(
+        const duration = this.transitionDuration || 300;
+        const distance = Math.min(
+            this.transitionDistance || 20,
+            8
+        );
+
+        const targetOpacity = Math.round(
             (this.fontOpacity || 100) * 2.55
         );
 
-        label.ease({
+        this.timeLabel.remove_all_transitions();
+        this.timeLabel2.remove_all_transitions();
+
+        // Incoming label
+        this.timeLabel2.set_text(newText);
+        this.timeLabel2.opacity = 0;
+        this.timeLabel2.translation_y = distance;
+
+        // Outgoing label
+        this.timeLabel.ease({
             opacity: 0,
-            translation_y: -(this.transitionDistance || 20),
-            duration: this.transitionDuration || 300,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            translation_y: -distance,
+            duration: duration,
+            mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD
+        });
+
+        // Incoming label
+        this.timeLabel2.ease({
+            opacity: targetOpacity,
+            translation_y: 0,
+            duration: duration,
+            mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD,
             onComplete: () => {
-
-                label.set_text(newText);
-
-                label.ease({
-                    opacity: targetOpacity,
-                    duration: this.transitionDuration,
-                    mode: Clutter.AnimationMode.EASE_IN_QUAD
-                });
+                this._swapTimeLabels();
             }
         });
     },
 
-    _transitionSlide: function(label, newText) {
+    _transitionSlide: function(newText) {
 
-        if (label.get_text() === newText)
+        if (this.timeLabel.get_text() === newText)
             return;
 
-        let targetOpacity = Math.round(
+        const distance = this.transitionDistance || 20;
+        const duration = this.transitionDuration || 300;
+
+        const targetOpacity = Math.round(
             (this.fontOpacity || 100) * 2.55
         );
 
-        label.ease({
+        this.timeLabel.remove_all_transitions();
+        this.timeLabel2.remove_all_transitions();
+
+        this.timeLabel2.opacity = 0;
+        this.timeLabel2.translation_x = 0;
+        this.timeLabel2.translation_y = distance;
+        this.timeLabel2.set_text(newText);
+
+        this.timeLabel.ease({
             opacity: 0,
-            translation_y: -(this.transitionDistance || 20),
-            duration: this.transitionDuration || 300,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            translation_y: -distance,
+            duration: duration,
+            mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD
+        });
+
+        this.timeLabel2.ease({
+            opacity: targetOpacity,
+            translation_y: 0,
+            duration: duration,
+            mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD,
             onComplete: () => {
-
-                label.set_text(newText);
-
-                label.translation_y = 20;
-
-                label.ease({
-                    opacity: targetOpacity,
-                    translation_y: 0,
-                    duration: this.transitionDuration,
-                    mode: Clutter.AnimationMode.EASE_OUT_BACK
-                });
+                this._swapTimeLabels();
             }
         });
     },
 
-    _transitionFlip: function(label, newText) {
+    _transitionFlipX: function(newText) {
 
-        if (label.get_text() === newText)
+        if (this.timeLabel.get_text() === newText)
             return;
 
-        let targetOpacity = Math.round(
+        const duration = this.transitionDuration || 300;
+
+        const targetOpacity = Math.round(
             (this.fontOpacity || 100) * 2.55
         );
 
-        label.ease({
+        this.timeLabel.remove_all_transitions();
+        this.timeLabel2.remove_all_transitions();
+
+        this.timeLabel2.set_text(newText);
+        this.timeLabel2.opacity = 0;
+        this.timeLabel2.rotation_angle_x = -90;
+
+        this.timeLabel.ease({
             opacity: 0,
-            translation_y: -(this.transitionDistance || 20),
-            duration: this.transitionDuration || 300,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            rotation_angle_x: 90,
+            duration: duration,
+            mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD
+        });
+
+        this.timeLabel2.ease({
+            opacity: targetOpacity,
+            rotation_angle_x: 0,
+            duration: duration,
+            mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD,
             onComplete: () => {
+                this._swapTimeLabels();
+            }
+        });
+    },
 
-                label.set_text(newText);
+    _transitionFlipY: function(newText) {
 
-                label.scale_y = 0.05;
+        if (this.timeLabel.get_text() === newText)
+            return;
 
-                label.ease({
-                    opacity: targetOpacity,
-                    scale_y: 1.0,
-                    duration: this.transitionDuration,
-                    mode: Clutter.AnimationMode.EASE_OUT_BACK
-                });
+        const duration = this.transitionDuration || 300;
+
+        const targetOpacity = Math.round(
+            (this.fontOpacity || 100) * 2.55
+        );
+
+        this.timeLabel.remove_all_transitions();
+        this.timeLabel2.remove_all_transitions();
+
+        this.timeLabel2.set_text(newText);
+        this.timeLabel2.opacity = 0;
+        this.timeLabel2.rotation_angle_y = -90;
+
+        this.timeLabel.ease({
+            opacity: 0,
+            rotation_angle_y: 90,
+            scale_x: 0.8,
+            duration: duration,
+            mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD
+        });
+
+        this.timeLabel2.scale_x = 0.8;
+
+        this.timeLabel2.ease({
+            opacity: targetOpacity,
+            rotation_angle_y: 0,
+            scale_x: 1.0,
+            duration: duration,
+            mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD,
+            onComplete: () => {
+                this._swapTimeLabels();
             }
         });
     },
@@ -546,28 +642,84 @@ AwesomeTime.prototype = {
         if (this.timeLabel.get_text() === newText)
             return;
 
-        let targetOpacity = Math.round(
+        const duration = this.transitionDuration || 300;
+
+        const targetOpacity = Math.round(
             (this.fontOpacity || 100) * 2.55
         );
 
+        this.timeLabel.remove_all_transitions();
+        this.timeLabel2.remove_all_transitions();
+
         this.timeLabel2.set_text(newText);
         this.timeLabel2.opacity = 0;
+        this.timeLabel2.translation_y = 0;
+        this.timeLabel2.show();
 
         this.timeLabel.ease({
             opacity: 0,
-            duration: this.transitionDuration
+            duration: duration,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD
         });
 
         this.timeLabel2.ease({
             opacity: targetOpacity,
-            duration: this.transitionDuration,
+            duration: duration,
+            mode: Clutter.AnimationMode.EASE_IN_QUAD,
             onComplete: () => {
-
-                let temp = this.timeLabel;
-                this.timeLabel = this.timeLabel2;
-                this.timeLabel2 = temp;
+                this._swapTimeLabels();
             }
         });
+    },
+
+    _transitionZoom: function(newText) {
+
+        const label = this.timeLabel;
+        const label2 = this.timeLabel2;
+
+        if (label.get_text() === newText)
+            return;
+
+        const duration = this.transitionDuration || 300;
+        const targetOpacity = Math.round((this.fontOpacity || 100) * 2.55);
+
+        label2.set_text(newText);
+        label2.opacity = 0;
+        label2.scale_x = 0.7;
+        label2.scale_y = 0.7;
+
+        label.ease({
+            opacity: 0,
+            duration,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD
+        });
+
+        label2.ease({
+            opacity: targetOpacity,
+            scale_x: 1,
+            scale_y: 1,
+            duration,
+            mode: Clutter.AnimationMode.EASE_OUT_BACK,
+            onComplete: () => {
+                this._swapTimeLabels();
+            }
+        });
+    },
+
+    _swapTimeLabels: function() {
+
+        let oldLabel = this.timeLabel;
+
+        this.timeLabel = this.timeLabel2;
+        this.timeLabel2 = oldLabel;
+
+        this.timeLabel2.remove_all_transitions();
+        this.timeLabel2.opacity = 0;
+        this.timeLabel2.translation_x = 0;
+        this.timeLabel2.translation_y = 0;
+        this.timeLabel2.scale_x = 1;
+        this.timeLabel2.scale_y = 1;
+        this.timeLabel2.rotation_angle_y = 0;
     },
 
     _update: function() {
@@ -1045,12 +1197,16 @@ AwesomeTime.prototype = {
             14
         );
 
-        this.timeLabel.style = `
+        const timeStyle = `
             font-family: "${timeFont.family}";
             font-size: ${timeFont.size}px;
             color: ${this.fontColor || "#ffffff"};
+            text-align: left;
             text-shadow: ${this._buildShadow()};
         `;
+
+        this.timeLabel.style = timeStyle;
+        this.timeLabel2.style = timeStyle;
 
         this.dateLabel.style = `
             font-family: "${dateFont.family}";
@@ -1186,7 +1342,7 @@ AwesomeTime.prototype = {
                 this.box.add_child(this.dateLabel);
 
             if (this.showTime)
-                this.box.add_child(this.timeLabel);
+                this.box.add_child(this.timeContainer);
 
             if (this.showWeather)
                 this.box.add_child(this.weatherLabel);
@@ -1197,7 +1353,7 @@ AwesomeTime.prototype = {
         } else {
 
             if (this.showTime)
-                this.box.add_child(this.timeLabel);
+                this.box.add_child(this.timeContainer);
 
             if (this.showDate)
                 this.box.add_child(this.dateLabel);

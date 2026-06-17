@@ -498,12 +498,10 @@ AwesomeTime.prototype = {
         this.timeLabel.remove_all_transitions();
         this.timeLabel2.remove_all_transitions();
 
-        // Incoming label
         this.timeLabel2.set_text(newText);
         this.timeLabel2.opacity = 0;
         this.timeLabel2.translation_y = distance;
 
-        // Outgoing label
         this.timeLabel.ease({
             opacity: 0,
             translation_y: -distance,
@@ -511,7 +509,6 @@ AwesomeTime.prototype = {
             mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD
         });
 
-        // Incoming label
         this.timeLabel2.ease({
             opacity: targetOpacity,
             translation_y: 0,
@@ -680,26 +677,31 @@ AwesomeTime.prototype = {
         if (label.get_text() === newText)
             return;
 
+        label.remove_all_transitions();
+        label2.remove_all_transitions();
+
         const duration = this.transitionDuration || 300;
-        const targetOpacity = Math.round((this.fontOpacity || 100) * 2.55);
+        const targetOpacity = Math.round(
+            (this.fontOpacity || 100) * 2.55
+        );
 
         label2.set_text(newText);
         label2.opacity = 0;
-        label2.scale_x = 0.7;
-        label2.scale_y = 0.7;
+        label2.scale_x = 0.3;
+        label2.scale_y = 0.3;
 
         label.ease({
             opacity: 0,
-            duration,
+            duration: duration,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD
         });
 
         label2.ease({
             opacity: targetOpacity,
-            scale_x: 1,
-            scale_y: 1,
-            duration,
-            mode: Clutter.AnimationMode.EASE_OUT_BACK,
+            scale_x: 1.0,
+            scale_y: 1.0,
+            duration: 600,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             onComplete: () => {
                 this._swapTimeLabels();
             }
@@ -720,6 +722,9 @@ AwesomeTime.prototype = {
         this.timeLabel2.scale_x = 1;
         this.timeLabel2.scale_y = 1;
         this.timeLabel2.rotation_angle_y = 0;
+
+        this.timeLabel.set_pivot_point(0.5, 0.5);
+        this.timeLabel2.set_pivot_point(0.5, 0.5);
     },
 
     _update: function() {

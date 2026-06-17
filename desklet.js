@@ -190,6 +190,13 @@ AwesomeTime.prototype = {
         this._bind("label-background-color", "labelBackgroundColor");
 
         this._refresh();
+        this._updateTime();
+        this._scheduleClockUpdates();
+
+        this._lastCity = null;
+        this._lastCountry = null;
+        this._geocodeTimer = null;
+        this._weatherRefreshId = null;
 
         this.timeTransition = this.timeTransition || "fade";
         this.transitionDuration = this.transitionDuration || 300;
@@ -213,12 +220,130 @@ AwesomeTime.prototype = {
         );
     },
 
+    _updateTime: function() {
+
+        if (this.showTime) {
+            this.timeLabel.show();
+
+            let text = this._applyTextCase(
+                this._applyTimePrefix(
+                    this.getTimePhrase()
+                ),
+                this.textCase
+            );
+
+            this._animateTimeChange(text);
+
+        } else {
+            this.timeLabel.hide();
+        }
+
+        if (this.showDate) {
+            this.dateLabel.show();
+
+            this.dateLabel.set_text(
+                this._applyTextCase(
+                    this._applyDatePrefix(
+                        this._getDateString()
+                    ),
+                    this.dateCase
+                )
+            );
+
+        } else {
+            this.dateLabel.hide();
+        }
+    },
+
+    _scheduleClockUpdates: function() {
+
+        if (this._clockTimer) {
+            Mainloop.source_remove(this._clockTimer);
+            this._clockTimer = null;
+        }
+
+        const delay = 60 - new Date().getSeconds();
+
+        this._clockTimer = Mainloop.timeout_add_seconds(
+            delay,
+            () => {
+
+                this._updateTime();
+
+                this._clockTimer =
+                    Mainloop.timeout_add_seconds(
+                        60,
+                        () => {
+                            this._updateTime();
+                            return true;
+                        }
+                    );
+
+                return false;
+            }
+        );
+    },
+
+    _scheduleWeatherUpdate: function() {
+
+        if (this._weatherRefreshId) {
+            Mainloop.source_remove(this._weatherRefreshId);
+            this._weatherRefreshId = null;
+        }
+
+        this._weatherRefreshId =
+            Mainloop.timeout_add(
+                500,
+                () => {
+
+                    this._weatherRefreshId = null;
+
+                    this._updateWeather();
+
+                    return false;
+                }
+            );
+    },
+
+    _scheduleGeocodeLookup: function(city, country) {
+
+        if (this._geocodeTimer) {
+            Mainloop.source_remove(this._geocodeTimer);
+            this._geocodeTimer = null;
+        }
+
+        this._geocodeTimer =
+            Mainloop.timeout_add(
+                500,
+                () => {
+
+                    this._geocodeTimer = null;
+
+                    this._geocodeLocation(
+                        city,
+                        country
+                    );
+
+                    return false;
+                }
+            );
+    },
+
     _refresh: function() {
 
         this._updateStyle();
         this._rebuildLayout();
-        this._update();
-        this.weatherUnits = (this.weatherUnits || "celsius").toLowerCase();
+        this._updateTime();
+        
+        let unit =
+            (this.weatherUnits || "celsius")
+                .toLowerCase()
+                .trim();
+
+        this.weatherUnits =
+            ["f", "fahrenheit"].includes(unit)
+                ? "fahrenheit"
+                : "celsius";
 
         let mode = (this.weatherLocationMode || "")
             .toLowerCase()
@@ -237,10 +362,10 @@ AwesomeTime.prototype = {
             this._lastMode = mode;
         }
 
-        this._updateWeather();
+        this._scheduleWeatherUpdate();
     },
 
-    numberToWord: function(number) {
+    minuteToWord: function(number) {
         const ones = [
             "Zero","One","Two","Three","Four",
             "Five","Six","Seven","Eight","Nine",
@@ -273,8 +398,8 @@ AwesomeTime.prototype = {
 
         const nextHour = (hour % 12) + 1;
 
-        const hourWord = this.numberToWord(hour);
-        const nextHourWord = this.numberToWord(nextHour);
+        const hourWord = this.minuteToWord(hour);
+        const nextHourWord = this.minuteToWord(nextHour);
 
         // FUZZY MODE
         if (this.fuzzyTime) {
@@ -312,14 +437,14 @@ AwesomeTime.prototype = {
             return `A quarter to ${nextHourWord}`;
 
         if (minute < 30) {
-            const m = this.numberToWord(minute);
+            const m = this.minuteToWord(minute);
             return (minute === 1)
                 ? `${m} minute past ${hourWord}`
                 : `${m} minutes past ${hourWord}`;
         }
 
         const remaining = 60 - minute;
-        const m = this.numberToWord(remaining);
+        const m = this.minuteToWord(remaining);
 
         return (remaining === 1)
             ? `${m} minute to ${nextHourWord}`
@@ -329,7 +454,7 @@ AwesomeTime.prototype = {
     _normalMinutePhrase: function(hourWord, nextHourWord, minute) {
 
         if (minute < 30) {
-            const m = this.numberToWord(minute);
+            const m = this.minuteToWord(minute);
 
             return (minute === 1)
                 ? `${m} minute past ${hourWord}`
@@ -337,7 +462,7 @@ AwesomeTime.prototype = {
         }
 
         const remaining = 60 - minute;
-        const m = this.numberToWord(remaining);
+        const m = this.minuteToWord(remaining);
 
         return (remaining === 1)
             ? `${m} minute to ${nextHourWord}`
@@ -723,63 +848,12 @@ AwesomeTime.prototype = {
         this.timeLabel2.set_pivot_point(0.5, 0.5);
     },
 
-    _update: function() {
-
-        if (this.showTime) {
-            this.timeLabel.show();
-            let text = this._applyTextCase(
-                this._applyTimePrefix(
-                    this.getTimePhrase()
-                ),
-                this.textCase
-            );
-
-            this._animateTimeChange(text);
-        } else {
-            this.timeLabel.hide();
-        }
-
-        if (this.showDate) {
-            this.dateLabel.show();
-            this.dateLabel.set_text(
-                this._applyTextCase(
-                    this._applyDatePrefix(
-                        this._getDateString()
-                    ),
-                    this.dateCase
-                )
-            );
-        } else {
-            this.dateLabel.hide();
-        }
-
-        if (this._timer) {
-            Mainloop.source_remove(this._timer);
-            this._timer = null;
-        }
-
-        const delay = 60 - new Date().getSeconds();
-
-        Mainloop.timeout_add_seconds(
-            delay,
-            () => {
-                this._update();
-
-                this._timer =
-                    Mainloop.timeout_add_seconds(
-                        60,
-                        () => {
-                            this._update();
-                            return true;
-                        }
-                    );
-
-                return false;
-            }
-        );
-    },
-
     _setLocation: function(city, country, lat, lon, source) {
+
+        if (source === "manual") {
+            this._lastCity = city;
+            this._lastCountry = country;
+        }
 
         this._current.city = city;
         this._current.country = country;
@@ -1008,6 +1082,22 @@ AwesomeTime.prototype = {
         let city = (this.weatherCity || "").trim();
         let country = (this.weatherCountry || "").trim();
 
+        if (
+            this._current.source === "manual" &&
+            this._current.lat != null &&
+            this._current.lon != null &&
+            city === this._lastCity &&
+            country === this._lastCountry
+        ) {
+
+            this._fetchWeather(
+                this._current.lat,
+                this._current.lon
+            );
+
+            return;
+        }
+
         if (!city) {
             this.weatherLabel.set_text(
                 MSG_ENTER_CITY
@@ -1019,7 +1109,7 @@ AwesomeTime.prototype = {
             MSG_LOOKING_UP
         );
 
-        this._geocodeLocation(
+        this._scheduleGeocodeLookup(
             city,
             country
         );
@@ -1034,12 +1124,7 @@ AwesomeTime.prototype = {
             return;
         }
 
-        const unit = (this.weatherUnits || "c").toLowerCase();
-
-        const apiUnit =
-            unit === "f"
-                ? "fahrenheit"
-                : "celsius";
+        const apiUnit = this.weatherUnits;
 
         let url =
             "https://api.open-meteo.com/v1/forecast" +
@@ -1075,8 +1160,8 @@ AwesomeTime.prototype = {
                         data.current.temperature_2m
                     );
 
-                    let suffix =
-                        this.weatherUnits === "f"
+                    const suffix =
+                        this.weatherUnits === "fahrenheit"
                             ? "°F"
                             : "°C";
 
@@ -1368,15 +1453,21 @@ AwesomeTime.prototype = {
     },
 
     on_desklet_removed: function() {
-        if (this._timer) {
-            Mainloop.source_remove(this._timer);
-            this._timer = null;
+        if (this._clockTimer) {
+            Mainloop.source_remove(this._clockTimer);
+            this._clockTimer = null;
         }
 
         if (this._weatherTimer) {
             Mainloop.source_remove(this._weatherTimer);
             this._weatherTimer = null;
         }
+
+        if (this._weatherRefreshId) {
+            Mainloop.source_remove(this._weatherRefreshId);
+            this._weatherRefreshId = null;
+        }
+
         Desklet.Desklet.prototype.destroy.call(this);
     }
 };

@@ -366,11 +366,11 @@
 
     "weather-units": {
         "type": "combobox",
-        "default": "c",
+        "default": "celsius",
         "description": "Temperature Units",
         "options": {
-            "Celsius (°C)": "c",
-            "Fahrenheit (°F)": "f"
+            "Celsius (°C)": "celsius",
+            "Fahrenheit (°F)": "fahrenheit"
         }
     },
 

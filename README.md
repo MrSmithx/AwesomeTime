@@ -1,280 +1,207 @@
 # Awesome Time
 
-A highly configurable Cinnamon Desklet that displays **time**, **date**, and **current weather** in a clean, customizable layout.
+A modern, highly customizable Cinnamon Desklet that displays the current time in natural language, along with optional date, weather, sunrise/sunset information, and animated text transitions.
 
-Awesome Time combines a natural-language clock, optional fuzzy time descriptions, flexible date formatting, and live weather powered by Open-Meteo.
-
----
-<img width="1171" height="277" alt="AwesomeTime" src="https://github.com/user-attachments/assets/58848287-0ee0-45da-8603-139d246bb89f" />
+<img width="1171" height="277" alt="AwesomeTime" src="https://github.com/user-attachments/assets/a8473929-4904-499b-83e9-84a5500f10b8" />
 
 ## Features
 
 ### Time Display
 
-* Natural language time display
-* Examples:
+* Natural language time formatting
 
-  * `Three o'Clock`
-  * `Twenty minutes past Four`
-  * `A quarter to Nine`
-* Optional **Noon** and **Midnight** labels
-* Configurable text case:
+  * *Three o'Clock*
+  * *Twenty Minutes Past Four*
+  * *A Quarter To Five*
+  * *Half Past Seven*
+* Optional custom prefix
+* Multiple text case modes
 
   * Normal
   * Uppercase
   * Lowercase
   * Title Case
-* Custom prefixes
+* Adjustable fonts, colors, opacity, and shadows
 
 ### Fuzzy Time
 
-Provides more human-friendly descriptions of time.
+Display approximate human-friendly time descriptions.
 
 #### Low
 
 * Exactly Three
-* Just after Three
+* Just After Three
 * Almost Four
 
 #### Medium
 
 * Around Three
-* About half past Three
+* About Half Past Three
 * Nearly Four
 
 #### High
 
-* Just gone Three
-* A little after Three
+* Just Gone Three
+* Getting On For Half Past Three
 * Approaching Four
-
-Three configurable fuzziness levels:
-
-* Low
-* Medium
-* High
-
----
 
 ### Date Display
 
-* Custom date formatting using GLib date format strings
-* Configurable position:
+* Fully customizable date format
+* Optional date prefix
+* Date above or below time
+* Independent font and color settings
+* Alignment controls
 
-  * Above Time
-  * Below Time
-* Custom prefixes
-* Independent font settings
-* Independent colour settings
-* Independent text case settings
+### Weather Integration
 
-Example formats:
+Powered by Open-Meteo.
 
-```text
-%A %d %B %Y
-```
+#### Automatic Location
 
-Output:
+* Detects location automatically using IP geolocation
 
-```text
-Sunday 14 June 2026
-```
+#### Manual Location
 
----
+* Search by city
+* Optional country specification
 
-### Weather Display
-
-Current weather is retrieved from Open-Meteo.
-
-Features include:
+#### Weather Information
 
 * Current temperature
 * Weather condition text
 * Weather icons
-* Optional location display
+* City and country display options
 
-Example:
+#### Sunrise & Sunset
 
-```text
-Sydney, Australia ☀️ 21°C Clear
-```
+* Optional sunrise time
+* Optional sunset time
+* Separate font and color settings
 
----
+### Animated Time Transitions
 
-### Weather Location Modes
+When the displayed time changes, Awesome Time can animate between values using dual-label transitions for smooth rendering.
 
-#### Automatic
+#### Available Transitions
 
-Automatically detects your location using IP geolocation.
+##### Fade
 
-Displays weather for your current location without requiring manual configuration.
+Subtle fade with slight vertical motion.
 
-#### Manual
+##### Crossfade
 
-Specify:
+Outgoing text fades out while incoming text fades in simultaneously.
 
-* City
-* Optional Country
+##### Slide
 
-Examples:
+Text slides vertically between updates.
 
-```text
-Sydney
-Australia
-```
+##### Flip X
 
-```text
-London
-United Kingdom
-```
+Card-style flip animation along the X axis.
 
-Country abbreviations are automatically normalised:
+##### Flip Y
 
-| Input | Converted To         |
-| ----- | -------------------- |
-| UK    | United Kingdom       |
-| USA   | United States        |
-| UAE   | United Arab Emirates |
+Horizontal flip animation along the Y axis.
 
-If a city + country lookup fails, Awesome Time automatically retries using the city name only.
+##### Zoom
 
----
+Gentle zoom-in transition with easing.
 
-### Weather Display Options
+##### None
 
-Location display can be configured as:
+Instant text update.
 
-* None
-* City
-* Country
-* City, Country
+### Appearance Controls
 
-Examples:
-
-```text
-21°C Clear
-```
-
-```text
-Sydney 21°C Clear
-```
-
-```text
-Australia 21°C Clear
-```
-
-```text
-Sydney, Australia 21°C Clear
-```
-
----
-
-### Styling Options
-
-Independent styling for:
-
-* Time
-* Date
-* Weather
-
-Supported options:
-
-* Font family
-* Font size
-* Colour
-* Opacity
-* Alignment
-
----
-
-### Text Effects
-
-Optional text shadow support:
-
-* Enable / Disable shadows
-* Shadow colour
-* Shadow offset
+* Custom fonts
+* Custom colors
+* Adjustable opacity
+* Background color
+* Background opacity
+* Rounded corners
+* Line spacing control
+* Text shadow support
 * Shadow blur
+* Shadow offset
 
----
+## Weather Provider
 
-## Weather Providers
+Awesome Time uses:
 
-### Geolocation
-
-Automatic location detection uses:
-
-* IP-API
-
-### Geocoding
-
-Manual location lookups use:
-
+* Open-Meteo Weather API
 * Open-Meteo Geocoding API
-
-### Weather Data
-
-Current weather is provided by:
-
-* Open-Meteo Forecast API
 
 No API key is required.
 
----
-
-## Refresh Behaviour
-
-### Time
-
-Updates every minute.
-
-### Weather
-
-Refreshes automatically every 30 minutes.
-
----
-
-## Requirements
-
-* Linux Mint Cinnamon
-* Cinnamon 6.x+
-* Internet connection for weather functionality
-
----
-
 ## Installation
 
-1. Copy the desklet folder into:
+1. Download or clone this repository.
+2. Copy the folder into:
 
-```text
+```
 ~/.local/share/cinnamon/desklets/
 ```
 
-2. Restart Cinnamon:
+3. Restart Cinnamon:
 
-```bash
-cinnamon --replace
 ```
-
-or reload Cinnamon:
-
-```text
 Alt + F2
 r
 ```
 
-3. Add **Awesome Time** from the Cinnamon Desklets manager.
+or log out and back in.
 
----
+4. Add **Awesome Time** from the Cinnamon Desklet manager.
+
+## Configuration
+
+All settings can be configured directly through the Cinnamon Desklet settings dialog.
+
+### Time
+
+* Show/Hide time
+* Time prefix
+* Font selection
+* Color selection
+* Opacity
+* Transition effects
+
+### Date
+
+* Show/Hide date
+* Custom format string
+* Position above/below time
+* Alignment
+
+### Weather
+
+* Auto location
+* Manual location
+* Temperature units
+* Weather condition text
+* Weather icons
+* Sunrise/Sunset display
+
+## Credits
+
+### Weather Data
+
+Open-Meteo
+
+### Location Detection
+
+IP-API
+
+### Built For
+
+Linux Mint Cinnamon Desktop
 
 ## License
 
 MIT License
 
----
+Copyright (c) 2026
 
-## Author
-
-Martyn
-
-Created for Cinnamon Desktop with a focus on readability, customisation, and natural-language time display.
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files to deal in the Software without restriction.

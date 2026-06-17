@@ -615,17 +615,13 @@ AwesomeTime.prototype = {
         this.timeLabel.ease({
             opacity: 0,
             rotation_angle_y: 90,
-            scale_x: 0.8,
             duration: duration,
             mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD
         });
 
-        this.timeLabel2.scale_x = 0.8;
-
         this.timeLabel2.ease({
             opacity: targetOpacity,
             rotation_angle_y: 0,
-            scale_x: 1.0,
             duration: duration,
             mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD,
             onComplete: () => {

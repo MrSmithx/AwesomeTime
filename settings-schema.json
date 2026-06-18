@@ -201,7 +201,8 @@
         "max": 2000,
         "step": 50,
         "units": "",
-        "description": "Transition Duration [ ms ]"
+        "description": "Transition Duration [ ms ]",
+        "dependency": "time-transition!=none"
     },
 
     "transition-distance": {
@@ -211,7 +212,8 @@
         "max": 100,
         "step": 1,
         "units": "",
-        "description": "Slide Distance [ px ]"
+        "description": "Slide Distance [ px ]",
+        "dependency": "time-transition!=none"
     },
 
     "show-date": {
@@ -286,13 +288,14 @@
     "fuzzy-time": {
         "type": "switch",
         "default": false,
-        "description": "Fuzzy Time Mode"
+        "description": "Fuzzy Time Mode",
     },
 
     "fuzzy-level": {
         "type": "combobox",
         "default": "medium",
         "description": "Fuzziness Level",
+        "dependency": "fuzzy-time",
         "options": {
             "Subtle": "low",
             "Normal": "medium",
@@ -306,18 +309,6 @@
         "description": "Show Weather"
     },
 
-    "weather-city": {
-        "type": "entry",
-        "default": "Sydney",
-        "description": "City"
-    },
-
-    "weather-country": {
-        "type": "entry",
-        "default": "Australia",
-        "description": "Country"
-    },
-
     "weather-location-mode": {
         "type": "combobox",
         "default": "auto",
@@ -326,6 +317,20 @@
             "Automatic": "auto",
             "Manual": "manual"
         }
+    },
+
+    "weather-city": {
+        "type": "entry",
+        "default": "Sydney",
+        "description": "City",
+        "dependency": "weather-location-mode=manual"
+    },
+
+    "weather-country": {
+        "type": "entry",
+        "default": "Australia",
+        "description": "Country",
+        "dependency": "weather-location-mode=manual"
     },
 
     "weather-location-display": {
@@ -406,13 +411,15 @@
     "weather-sun-font-family": {
         "type": "fontchooser",
         "default": "Sans 14",
-        "description": "Sunrise & Sunset Font"
+        "description": "Sunrise & Sunset Font",
+        "dependency": "weather-show-sun"
     },
 
     "weather-sun-color": {
         "type": "colorchooser",
         "default": "#FFFFFF",
-        "description": "Sunrise & Sunset Color"
+        "description": "Sunrise & Sunset Color",
+        "dependency": "weather-show-sun"
     },
 
     "text-shadow-enabled": {
@@ -424,7 +431,8 @@
     "text-shadow-color": {
         "type": "colorchooser",
         "default": "#000000",
-        "description": "Shadow Color"
+        "description": "Shadow Color",
+        "dependency": "text-shadow-enabled"
     },
 
     "text-shadow-offset": {
@@ -433,7 +441,8 @@
         "min": 0,
         "max": 20,
         "step": 1,
-        "description": "Shadow Depth"
+        "description": "Shadow Depth",
+        "dependency": "text-shadow-enabled"
     },
 
     "text-shadow-blur": {
@@ -442,7 +451,8 @@
         "min": 0,
         "max": 20,
         "step": 1,
-        "description": "Shadow Softness"
+        "description": "Shadow Softness",
+        "dependency": "text-shadow-enabled"
     },
 
     "line-spacing": {

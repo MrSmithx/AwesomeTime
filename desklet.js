@@ -1473,6 +1473,11 @@ AwesomeTime.prototype = {
             this._weatherRefreshId = null;
         }
 
+        if (this._geocodeTimer) {
+            Mainloop.source_remove(this._geocodeTimer);
+            this._geocodeTimer = null;
+        }
+
         Desklet.Desklet.prototype.destroy.call(this);
     }
 };

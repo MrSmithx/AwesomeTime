@@ -1289,6 +1289,8 @@ AwesomeTime.prototype = {
             color: ${this.fontColor || "#ffffff"};
             text-align: left;
             text-shadow: ${this._buildShadow()};
+            margin-top: ${(this.lineSpacing || 5)}px;
+            margin-bottom: ${(this.lineSpacing || 5)}px;
         `;
 
         this.timeLabel.style = timeStyle;
@@ -1301,6 +1303,7 @@ AwesomeTime.prototype = {
             text-align: ${dateAlignment};
             text-shadow: ${this._buildShadow()};
             margin-top: ${(this.lineSpacing || 5)}px;
+            margin-bottom: ${(this.lineSpacing || 5)}px;
         `;
 
         this.weatherLabel.style = `
@@ -1310,6 +1313,7 @@ AwesomeTime.prototype = {
             text-align: ${weatherAlignment};
             text-shadow: ${this._buildShadow()};
             margin-top: ${(this.lineSpacing || 5)}px;
+            margin-bottom: ${(this.lineSpacing || 5)}px;
         `;
 
         this.sunLabel.style = `
@@ -1318,7 +1322,8 @@ AwesomeTime.prototype = {
             color: ${this.weatherSunColor || "#ffffff"};
             text-align: ${weatherAlignment};
             text-shadow: ${this._buildShadow()};
-            margin-top: 3px;
+            margin-top: ${(this.lineSpacing || 5)}px;
+            margin-bottom: ${(this.lineSpacing || 5)}px;
         `;
 
         this.timeLabel.opacity = Math.round(

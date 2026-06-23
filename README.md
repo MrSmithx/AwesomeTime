@@ -89,25 +89,37 @@ When the displayed time changes, Awesome Time can animate between values using d
 
 Subtle fade with slight vertical motion.
 
+<img width="400" height="225" alt="Fade" src="https://github.com/user-attachments/assets/25e464db-0c13-4cd1-9a8b-887fbcb84219" />
+
 ##### Crossfade
 
 Outgoing text fades out while incoming text fades in simultaneously.
+
+<img width="400" height="225" alt="Crossfade" src="https://github.com/user-attachments/assets/3e5e9cf9-a086-4888-bc1f-52744eaecb6c" />
 
 ##### Slide
 
 Text slides vertically between updates.
 
+<img width="400" height="225" alt="Slide" src="https://github.com/user-attachments/assets/11d4df88-235e-472e-8794-c97c7237b2a5" />
+
 ##### Flip X
 
 Card-style flip animation along the X axis.
+
+<img width="400" height="225" alt="Flip X" src="https://github.com/user-attachments/assets/1b0ab479-c31a-4fff-b61e-e6b80ee57843" />
 
 ##### Flip Y
 
 Horizontal flip animation along the Y axis.
 
+<img width="400" height="225" alt="Flip Y" src="https://github.com/user-attachments/assets/adf21997-8175-44ce-bfac-a0a3381406e7" />
+
 ##### Zoom
 
 Gentle zoom-in transition with easing.
+
+<img width="400" height="225" alt="Zoom" src="https://github.com/user-attachments/assets/56d561c4-1145-44a3-8e5a-5510d482e33d" />
 
 ##### None
 

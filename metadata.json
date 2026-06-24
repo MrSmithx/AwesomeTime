@@ -1,6 +1,6 @@
 {
     "uuid": "AwesomeTime@martyn",
     "name": "Awesome Time",
-    "description": "Displays time in natural language",
+    "description": "Displays time in natural language\n\nhttps://github.com/MrSmithx/AwesomeTime",
     "max-instances": 1
 }
